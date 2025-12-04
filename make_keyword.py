@@ -1,18 +1,14 @@
 import pandas as pd
 import re
+import os
 
-
-df = pd.read_csv("reviews_sudoku.csv")
-
+file_list = [f"reviews_sudoku{i}.csv" for i in range(1, 11)]
 
 def clean_text(text):
     text = str(text)
     text = re.sub(r"[^가-힣0-9 ]", " ", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
-
-df["clean_text"] = df["content"].apply(clean_text)
-
 
 keyword_groups = {
     "광고": ["광고", "ad", "애드"],
@@ -23,17 +19,27 @@ keyword_groups = {
     "기능 다양성": ["타임어택", "챌린지", "기록", "저장", "모드"]
 }
 
-
-group_counts = {key: 0 for key in keyword_groups}
-
-for review in df["clean_text"]:
-    review_lower = review.lower()
-    for group, keywords in keyword_groups.items():
-        if any(k in review_lower for k in keywords):
-            group_counts[group] += 1
+for idx, file_name in enumerate(file_list, start=1):
+    if not os.path.exists(file_name):
+        continue
 
 
-keywords_df = pd.DataFrame(list(group_counts.items()), columns=["keyword", "count"])
-keywords_df.to_csv("keywords_sudoku.csv", index=False)
+    df = pd.read_csv(file_name)
 
-print(keywords_df)
+    df["clean_text"] = df["content"].apply(clean_text)
+
+    group_counts = {key: 0 for key in keyword_groups}
+
+    for review in df["clean_text"]:
+        review_lower = review.lower()
+        for group, keywords in keyword_groups.items():
+            if any(k in review_lower for k in keywords):
+                group_counts[group] += 1
+
+    keywords_df = pd.DataFrame(list(group_counts.items()), columns=["keyword", "count"])
+
+    output_name = f"keywords_sudoku{idx}.csv"
+    keywords_df.to_csv(output_name, index=False)
+
+    print(keywords_df)
+
