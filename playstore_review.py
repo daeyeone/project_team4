@@ -2,16 +2,6 @@ from google_play_scraper import Sort, reviews
 import pandas as pd
 
 
-def mask_username(name):
-    if not isinstance(name, str):
-        return name
-
-    if len(name) <= 1:
-        return "*"
-    else:
-        return name[0] + "*" * (len(name) - 1)
-
-
 app_ids = [
     "easy.sudoku.puzzle.solver.free",
     "sudoku.puzzle.free.game.brain",
@@ -35,14 +25,18 @@ for idx, app_id in enumerate(app_ids, start=1):
         count=300
     )
 
-    df = pd.DataFrame(review_list)
+    filtered = []
+    for r in review_list:
+        filtered.append({
+            "reviewId": r.get("reviewId"),
+            "content": r.get("content"),
+            "score": r.get("score"),
+            "date": r.get("at").strftime("%Y-%m-%d") if r.get("at") else None
+        })
 
-    if "userName" in df.columns:
-        df["userName"] = df["userName"].apply(mask_username)
+    df = pd.DataFrame(filtered)
 
     file_name = f"reviews_sudoku{idx}.csv"
-    df.to_csv(file_name, index=False)
+    df.to_csv(file_name, index=False, encoding="utf-8-sig")
 
-print("완료")
-
-
+print("파일 생성완료")
