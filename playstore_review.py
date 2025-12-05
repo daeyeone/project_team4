@@ -1,6 +1,8 @@
 from google_play_scraper import Sort, reviews
 import pandas as pd
+from datetime import datetime, timedelta
 
+six_months_ago = datetime.now() - timedelta(days=180)
 
 app_ids = [
     "easy.sudoku.puzzle.solver.free",
@@ -22,21 +24,21 @@ for idx, app_id in enumerate(app_ids, start=1):
         lang='ko',
         country='kr',
         sort=Sort.NEWEST,
-        count=300
+        count=150
     )
 
-    filtered = []
-    for r in review_list:
-        filtered.append({
-            "reviewId": r.get("reviewId"),
-            "content": r.get("content"),
-            "score": r.get("score"),
-            "date": r.get("at").strftime("%Y-%m-%d") if r.get("at") else None
-        })
+    df = pd.DataFrame(review_list)
 
-    df = pd.DataFrame(filtered)
+    df["date"] = df["at"].apply(lambda x: x.strftime("%Y-%m-%d") if pd.notnull(x) else None)
+
+    df["at"] = pd.to_datetime(df["at"])
+    filtered_df = df[df["at"] >= six_months_ago]
+
+    final_df = filtered_df if len(filtered_df) >= 150 else df
+    final_df = final_df[["reviewId", "content", "date", "score"]]
 
     file_name = f"reviews_sudoku{idx}.csv"
-    df.to_csv(file_name, index=False, encoding="utf-8-sig")
+    final_df.to_csv(file_name, index=False, encoding='utf-8-sig')
 
-print("파일 생성완료")
+print("완료!")
+
